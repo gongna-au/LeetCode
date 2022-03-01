@@ -5,19 +5,15 @@ func BFSearch( target string , model string )int {
 	targetLen:=len(target)
 	modelLen:=len(model)
 
-	for  i:=0;i<targetLen ;i++{
+	for  i:=0;i<targetLen ;{
 		
 		k:=i
 		j:=0
 		for ;j< modelLen;j++{
-			
-			
-				
 				if target[k]==model[j]{
 					k++
 					j++
 				}else{
-					
 					break
 				}
 			
@@ -25,6 +21,8 @@ func BFSearch( target string , model string )int {
 		
 		if j==modelLen{
 			return i 
+		}else{
+			i++
 		}
 	}
 	return -1
@@ -32,6 +30,6 @@ func BFSearch( target string , model string )int {
 }
 func main(){
 	target:="ababdcd"
-	model:="cdf"
+	model:="cd"
 	fmt.Println(BFSearch(target,model))
 }
