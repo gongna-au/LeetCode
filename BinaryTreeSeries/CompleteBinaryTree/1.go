@@ -222,16 +222,10 @@ func PostOrder(t *Tree ){
 }
 
 
-
-
 func NewNode( left *Tree, right *Tree ) *Tree {
 
 	return  &Tree{nil,left,right}
 }
-
-
-
-
 
 
 
