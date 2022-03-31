@@ -7,13 +7,23 @@ func MinimumPathSum(dp [][]int) int {
 	temp := make([]int, len(dp[0]))
 
 	//InitfirstRow
-	for i := 0; i < len(dp); i++ {
-		temp[i] = dp[0][i]
+	//因为第一行只能依赖左边
+	temp[0] = dp[0][0]
+	for i := 1; i < len(dp); i++ {
+		temp[i] = temp[i-1] + dp[0][i]
 	}
+	//第二行左边的第一个只能依赖上面的
 
 	for i := 1; i < len(dp); i++ {
-		for j := 1; j < len(dp[0]); j++ {
-			temp[j] = temp[j-1]
+		for j := i; j < len(dp[0]); j++ {
+			if j == 0 {
+				//对于第一列的数据只依赖于上面一行的第一列
+				temp[0] = temp[0] + dp[i][0]
+			} else {
+				//temp[j]是上一行的数据
+				temp[j] = min((temp[j-1]), temp[j]) + dp[i][j]
+
+			}
 
 		}
 
