@@ -1,0 +1,46 @@
+package main
+
+import (
+	"log"
+	"net"
+	"net/rpc"
+	"new"
+)
+
+type ServerServiceInterface = interface {
+	Service(request string, reply *string) error
+}
+
+func RegisterService(name string, svc ServerServiceInterface) error {
+	return rpc.RegisterName(name, svc)
+
+}
+
+type User struct {
+}
+
+func (u *User) Service(request *new.String, reply *new.String) error {
+
+	*reply = request.GetValue() + " " + "Success!"
+	return nil
+}
+
+func ListenService(network string, address string) {
+	listener, err := net.Listen(network, address)
+	if err != nil {
+		log.Fatal("ListenTCP error:", err)
+	}
+	conn, err := listener.Accept()
+	if err != nil {
+		log.Fatal("Accept error:", err)
+	}
+
+	rpc.ServeConn(conn)
+
+}
+
+func main() {
+	RegisterService("User", new(User))
+	ListenService("tcp", ":1234")
+
+}

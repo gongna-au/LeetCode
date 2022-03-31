@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package="./;new";
+package new;
+
+message String {
+    string value =1;
+    
+}
+service ServerServiceInterface {
+    rpc Service (String) returns (String);
+}

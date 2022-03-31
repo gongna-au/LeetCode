@@ -85,6 +85,7 @@ func SlideWindowSeries(array []int, n int ) (result []int) {
 	return result
 
 }
+
 func max(a int, b int  )int {
 	if a > b {
 		return a
