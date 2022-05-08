@@ -86,7 +86,6 @@ func (e *EventToExecute) Method() {
 func (e *EventToExecute) GetEvent() {
 	button := newButton("\n>>1.新增用户\n>>2.查找用户\n>>3.用户登陆\n>>4.用户注销\n>>5.退出")
 	button.showPageInformation()
-
 	button.listenButtonBePressed()
 
 }
