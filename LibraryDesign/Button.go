@@ -402,13 +402,14 @@ func runFuncName() string {
 type Button struct {
 	information string
 	bePressed   int
+	orders      []ObserverInterfaceSlice
 }
+type ObserverInterfaceSlice []ObserverInterface
 
 func newButton(info string) *Button {
-	return &Button{
-		info,
-		0,
-	}
+	b := &Button{}
+	b.information = info
+	return b
 }
 func (b *Button) showPageInformation() {
 	fmt.Println(b.information)
@@ -495,140 +496,133 @@ func WaitingForLegalInput(w Inputinterface) {
 type ButtonFunc func()
 
 type App struct {
+	funcNum  int
 	funcList []ButtonFunc
 }
 
 func NewApp() *App {
-	return &App{}
+	a := &App{
+		funcNum: 1,
+	}
+	p := a.PageMain
+	a.funcList = append(a.funcList, func() { p() })
+	a.funcNum = 1
+	return a
+}
+func (a *App) AppFuncListChange(b ButtonFunc) {
+	a.funcList = append(a.funcList, b)
+	a.funcNum = a.funcNum + 1
 }
 
 func (a *App) Run() {
-	a.funcList = append(a.funcList, Test1())
-	for i, v := range a.funcList {
-		fmt.Println("第 ", i, " 次执行") /*  */
-		v()
-		a.funcList = append(a.funcList, Test1())
+
+	for i := 0; i < a.funcNum; i++ {
+		a.funcList[i]()
 	}
 }
 
-func Test1() ButtonFunc {
-	breakTag := false
-	for {
-		if breakTag == true {
-			break
-		}
-		button := newButton("\n>>1.用户注册\n>>2.用户登陆\n>>3.书籍查询\n")
-		button.showPageInformation()
-		button.listenButtonBePressed()
-		switch button.bePressed {
-		case 1:
-			{
-				// 创建 新增用户 “主题”
-				fmt.Println("----------------------- 新增用户 “主题”")
-				orderUnPaidCancelSubject := &ObservableConcrete{}
-				orderUnPaidCancelSubject.Attach(
-					&GeneralUserCreate{},
-				)
-				orderUnPaidCancelSubject.Notify()
-				breakTag = true
-				return Test1()
+func (a *App) PageMain() {
 
-			}
-		case 2:
-			{
-				// 创建 新增书籍 “主题”
-				fmt.Println("----------------------- 用户登陆 “主题”")
-				orderOverTimeSubject := &ObservableConcrete{}
-				orderOverTimeSubject.Attach(
-					&UserLogin{},
-				)
-				orderOverTimeSubject.Notify()
-				breakTag = true
-				return Test2()
-			}
-		case 3:
-			{
-				// 创建 查询结果的主题
-				fmt.Println("----------------------- 新增查询书籍 “主题”")
-				orderPaidCancelSubject := &ObservableConcrete{}
-				orderPaidCancelSubject.Attach(
-					&BookSearch{},
-				)
-				orderPaidCancelSubject.Notify()
-				breakTag = true
-				//返回下一次要执行的函数
-				return Test1()
+	str := ">>1.用户注册\n>>2.用户登陆\n>>3.书籍查询\n"
+	button := newButton(str)
+	//页面按钮信息展示
+	button.showPageInformation()
+	//监听哪个按钮被按下
+	button.listenButtonBePressed()
 
-			}
-		default:
-			{
-				fmt.Println("Illegal input, Please input again!")
-				breakTag = false
-
-			}
-
-		}
-
+	//页面按钮选项
+	orders := []ObserverInterfaceSlice{
+		ObserverInterfaceSlice{
+			&GeneralUserCreate{},
+		},
+		ObserverInterfaceSlice{
+			&UserLogin{},
+		},
+		ObserverInterfaceSlice{
+			&BookSearch{},
+		},
 	}
-	return nil
+	splitStr := strings.Split(str, "\n")
+	//执行按钮对应的函数
+
+	a.Test2(splitStr[button.bePressed-1], orders[button.bePressed-1])
+	//并展示这个按钮对应的下一个要执行的函数 把他添加到
+	if button.bePressed == 1 {
+		a.AppFuncListChange(a.PageMain)
+	} else if button.bePressed == 2 {
+		a.AppFuncListChange(a.PageSubtitle1)
+	} else if button.bePressed == 3 {
+		a.AppFuncListChange(a.PageMain)
+	}
+
 }
 
-func Test2() ButtonFunc {
-	button := newButton("\n>>1.借书\n>>2.还书\n>>3.查询书籍\n>>4.查看借阅记录")
+func (a *App) PageSubtitle1() {
+	str := ">>1.借书\n>>2.还书\n>>3.查询书籍\n>>4.查看借阅记录"
+	button := newButton(str)
 	button.showPageInformation()
 	button.listenButtonBePressed()
-	switch button.bePressed {
-	case 1:
-		{
-			// 创建 新增用户 “主题”
-			fmt.Println("----------------------- 用户借书 “主题”")
-			orderUnPaidCancelSubject := &ObservableConcrete{}
-			orderUnPaidCancelSubject.Attach(
-				&GeneralUserCreate{},
-			)
-			orderUnPaidCancelSubject.Notify()
-			fmt.Println("----------------------- 用户借书操作完毕")
-
-			return Test2()
-		}
-	case 2:
-		{
-			// 创建 新增书籍 “主题”
-			fmt.Println("----------------------- 用户还书 “主题”")
-			orderOverTimeSubject := &ObservableConcrete{}
-			orderOverTimeSubject.Attach(
-				&UserLogin{},
-			)
-			orderOverTimeSubject.Notify()
-			fmt.Println("----------------------- 用户还书操作完毕")
-			return Test2()
-		}
-	case 3:
-		{
-			// 创建 查询结果的主题
-			fmt.Println("----------------------- 查询书籍 “主题”")
-			orderPaidCancelSubject := &ObservableConcrete{}
-			orderPaidCancelSubject.Attach(
-				&BookSearch{},
-			)
-			orderPaidCancelSubject.Notify()
-			fmt.Println("----------------------- 用户查询书籍操作完毕")
-			return Test2()
-		}
-	case 4:
-		{
-			// 创建 查询结果的主题
-			fmt.Println("----------------------- 查询借阅记录 “主题”")
-			orderPaidCancelSubject := &ObservableConcrete{}
-			orderPaidCancelSubject.Attach(
-				&BookSearch{},
-			)
-			orderPaidCancelSubject.Notify()
-			fmt.Println("----------------------- 用户查询借阅记录操作完毕")
-			return Test2()
-		}
-
+	splitStr := strings.Split(str, "\n")
+	orders := []ObserverInterfaceSlice{
+		ObserverInterfaceSlice{
+			//之后更改 &BookBorrow{}
+			&BookSearch{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改 &BookBack{}
+			&BookSearch{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改
+			&BookSearch{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改&BookBorrowedRecord
+			&BookSearch{},
+		},
 	}
-	return nil
+	//执行按钮对应的函数
+	a.Test2(splitStr[button.bePressed-1], orders[button.bePressed-1])
+
+	//并展示这个按钮对应的下一个要执行的函数 把他添加到
+	if button.bePressed == 1 {
+		a.AppFuncListChange(a.PageSubtitle1)
+	} else if button.bePressed == 2 {
+		a.AppFuncListChange(a.PageSubtitle1)
+	} else if button.bePressed == 3 {
+		a.AppFuncListChange(a.PageSubtitle1)
+	} else {
+		a.AppFuncListChange(a.PageSubtitle1)
+	}
+
+}
+
+func Test1(order ObserverInterface, info ...string) {
+	// 创建 新增用户 “主题”
+	fmt.Println(info, " “主题” ")
+	orderUnPaidCancelSubject := &ObservableConcrete{}
+	orderUnPaidCancelSubject.Attach(
+		order,
+	)
+	orderUnPaidCancelSubject.Notify()
+	fmt.Println(info, " “主题”操作完毕 ")
+
+}
+func (a *App) Test2(info string, order ObserverInterfaceSlice) {
+	// 创建 新增用户 “主题”
+	fmt.Println(info[4:], " “主题” ")
+	orderUnPaidCancelSubject := &ObservableConcrete{}
+	for _, v := range order {
+		orderUnPaidCancelSubject.Attach(
+			v,
+		)
+	}
+
+	orderUnPaidCancelSubject.Notify()
+	fmt.Println(info[4:], " “主题”操作完毕 ")
+
+}
+
+func Testttt() {
 
 }
