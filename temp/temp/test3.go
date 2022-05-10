@@ -1,4 +1,4 @@
-package main
+package temp
 
 import "fmt"
 import "os"
@@ -61,10 +61,5 @@ func readerCart() {
 
 }
 func readerExit() {
-
-}
-
-func main() {
-	mainExit()
 
 }
