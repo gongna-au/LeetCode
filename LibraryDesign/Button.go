@@ -3,6 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
+
+	//"net/http/internal"
+
+	//"net/http/internal"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -11,6 +16,14 @@ import (
 	//"strconv"
 	//"github.com/gin-vue-admin/server/model/system/response"
 )
+
+//用户一旦登陆就立即保存用户的登陆状态
+var userToken string
+var limitNum int
+
+//拓展的功能的初步想法是
+//设置一个时间的限制 超过时间后就需要用户重新登陆 也就是判断 userToken是否为空字符串 如果为空就需要执行主页面，要求用户重新登陆
+//如果有时间就补充，没有时间就摆烂
 
 // Observable 被观察者
 type Observable interface {
@@ -276,11 +289,12 @@ func NewPrompt() *Prompt {
 	p := &Prompt{
 		make(map[string]interface{}),
 	}
-	p.prompt["bookClassification"] = "\nA 马克思主义、列宁主义、毛泽东思想、邓小平理论\nB 哲学、宗教\nC 社会科学总论\nD	政治、法律\nE	军事\nF 经济\nG	文化、科学、教育、体育\nH	语言、文字\nI	文学\nJ 艺术\nK	历史、地理\nN	自然科学总论\nO 数理科学和化学\nP 天文学、地球科学\nQ	生物科学\nR 医药、卫生\nS 农业科学\nT	工业技术\nU 交通运输\nV	航空、航天\nX	环境科学、安全科学\nZ	综合性图书\n"
+	p.prompt["bookClassification"] = "\nA马克思主义、列宁主义、毛泽东思想、邓小平理论\nB哲学、宗教\nC社会科学总论\nD政治、法律\nE军事\nF经济\nG文化、科学、教育、体育\nH语言、文字\nI文学\nJ艺术\nK历史、地理\nN自然科学总论\nO数理科学和化学\nP天文学、地球科学\nQ生物科学\nR医药、卫生\nS农业科学\nT工业技术\nU交通运输\nV航空、航天\nX环境科学、安全科学\nZ综合性图书\n"
 	p.prompt["bookClassificationMap"] = map[string]string{"A": "马克思主义、列宁主义、毛泽东思想、邓小平理论", "B": "哲学、宗教", "C": "社会科学总论", "D": "政治、法律", "E": "军事", "F": "经济", "G": "文化、科学、教育、体育", "H": "语言、文字", "I": "文学", "J": "艺术", "K": "历史、地理", "N": "自然科学总论", "O": "数理科学和化学", "P": "天文学、地球科学", "Q": "生物科学", "R": "医药、卫生", "S": "农业科学", "T": "工业技术", "U": "交通运输", "V": "航空、航天", "X": "环境科学、安全科学", "Z": "综合性图书"}
+
 	//其他的提示信息
-	p.prompt["bookSearchInfo"] = "\n1.bookName书籍名查找\n2.bookKey其他有关书籍的信息\n3.bookAuthor书籍作者\n4.bookclassification书籍分类查找\n5.bookState根据书籍的借阅状态查\n"
-	p.prompt["bookSearchInfoMap"] = map[string]string{"1": "bookName", "2": "bookKey", "3": "bookAuthor", "4": "bookclassification", "5": "bookState"}
+	p.prompt["bookSearchInfo"] = "\n1.bookName书籍名查找\n2.bookKey其他有关书籍的信息\n3.bookAuthor书籍作者\n4.bookClassification书籍分类查找\n5.bookState根据书籍的借阅状态查\n"
+	p.prompt["bookSearchInfoMap"] = map[string]string{"1": "bookName", "2": "bookKey", "3": "bookAuthor", "4": "bookClassification", "5": "bookState"}
 	return p
 }
 func (p *Prompt) Show(str string) {
@@ -296,28 +310,22 @@ type BookSearch struct {
 
 func (b *BookSearch) Input() (err error) {
 	p := NewPrompt()
-	p.Show("bookSearchInfo")
+
+	fmt.Println(p.prompt["bookSearchInfo"])
 	fmt.Print("Please input your choice:")
 	var temp string
-	fmt.Scanln(&temp)
+	fmt.Scan(&temp)
 	switch k := p.prompt["bookSearchInfoMap"].(type) {
 	case map[string]string:
-		v, ok := k[temp]
 
+		v, ok := k[temp]
 		if ok {
 			b.target = v
-			return nil
 		} else {
-			errors.New("Input illegal!")
+			return errors.New("Input illegal!")
 		}
 	}
-	err = b.Search()
-	if err != nil {
-		return errors.New("Search Error!")
-	} else {
-		return nil
-	}
-
+	return nil
 }
 
 func NewBookSerach() *BookSearch {
@@ -331,21 +339,48 @@ func NewBookSerach() *BookSearch {
 	//作者查
 	b.key["bookAuthor"] = ""
 	//书籍分类查找
-	b.key["bookclassification"] = ""
+	b.key["bookClassification"] = ""
 	//根据书籍的借阅状态查
 	b.key["bookState"] = ""
+
+	b.key["result"] = ""
 
 	return b
 
 }
+
 func (b *BookSearch) Search() (err error) {
-	fmt.Println("Please input information about ", b.target, ":")
+
+	//已经知道用户是想要按照什么类别来查找了 b.target
+	fmt.Println("Acording ", b.target, " to search......")
+	p := NewPrompt()
+	// 只有当b.target == bookClassification时我才会展示书籍的分类 ,得到用户的输入然后拿一个字母去数据库查找
+	// 其他的情况都是模糊查找，直接拿数据去查，而不是精确查找
+	if b.target == "bookClassification" {
+		p.Show(b.target)
+	} else if b.target == "bookState" {
+		fmt.Println("目前本图书馆可以借阅的书籍有:.....")
+		b.key["result"] = "平凡的世界\n楚门的世界\n生命不能承受之重\n"
+		fmt.Println(b.key["result"])
+		return nil
+	} else {
+		fmt.Println("Reminder: Please enter no more than 30 letters to find......")
+	}
 	var temp string
 	fmt.Scanf("%30s", &temp)
 	b.key[b.target] = temp
+	//fmt.Println("b.key[b.target]", b.key[b.target])
+	// b.key已经被赋值，现在根据b.target 以及查找所需要的数据去数据库查找了
 	fmt.Println("Searching in DB...")
+	b.key["result"] = "test-searchedbookIdInDB"
 	fmt.Println("Searching in DB success!")
 	//打印查询结果
+	//b.SerchInDB()Result 获取到结果 存储在Result里面
+	//如果想要对Result.result 做进一步的处理，就继续写个函数
+	//如果不处理就直接打印或者存储
+	fmt.Println("Results are ......", b.key["result"])
+	//在数据库查询结果并存储
+
 	return nil
 
 }
@@ -357,6 +392,7 @@ func (observer *BookSearch) Do(o Observable) (err error) {
 	WaitingForLegalInput(observer)
 	observer.Search()
 	fmt.Println(runFuncName(), "查询书籍相关的操作已经处理完毕...")
+
 	return
 }
 
@@ -429,6 +465,8 @@ type UserLogin struct {
 }
 
 func (u *UserLogin) Login() error {
+	//拿着userId password杂u数据库里面查找
+	//找到了
 	fmt.Println("User login success!")
 	return nil
 }
@@ -460,13 +498,24 @@ func (u *UserLogin) Search() (err error) {
 func (observer *UserLogin) Do(o Observable) (err error) {
 	// code...
 	WaitingForLegalInput(observer)
-	observer.Login()
+	err = observer.Login()
+	//登陆成功才会更改userToken
+	if err == nil {
+		userToken = observer.userId
+	}
 	fmt.Println(runFuncName(), "用户登陆的相关的操作已处理完毕...")
 	return nil
+}
+func limitNumInit() {
+	limitNum = 4
+	//其他限制的初始化
+
 }
 
 // 客户端调用
 func main() {
+	//每个人最多可以借四本书 等等
+	limitNumInit()
 	app := NewApp()
 	app.Run()
 	// 未来可以快速的根据业务的变化 创建新的主题 从而快速构建新的业务接口
@@ -500,15 +549,43 @@ type App struct {
 	funcList []ButtonFunc
 }
 
+//------------------------------------------------------------------------
+func MainPageOrdersInit() []ObserverInterfaceSlice {
+	orders := []ObserverInterfaceSlice{
+		ObserverInterfaceSlice{
+			&GeneralUserCreate{},
+		},
+		ObserverInterfaceSlice{
+			&UserLogin{},
+		},
+		ObserverInterfaceSlice{
+			&BookSearch{},
+		},
+	}
+
+	return orders
+
+}
+func (a *App) MainPageAppFuncListChangeInit() []ButtonFunc {
+	appFuncListChange := []ButtonFunc{
+		a.PageMain,
+		a.PageSubtitle1,
+		a.PageMain,
+	}
+	return appFuncListChange
+}
+
+//------------------------------------------------------------------------------------
 func NewApp() *App {
 	a := &App{
 		funcNum: 1,
 	}
-	p := a.PageMain
-	a.funcList = append(a.funcList, func() { p() })
-	a.funcNum = 1
+	orders := MainPageOrdersInit()
+	appFuncListChange := a.MainPageAppFuncListChangeInit()
+	a.Page(">>1.用户注册\n>>2.用户登陆\n>>3.书籍查询\n", orders, appFuncListChange)
 	return a
 }
+
 func (a *App) AppFuncListChange(b ButtonFunc) {
 	a.funcList = append(a.funcList, b)
 	a.funcNum = a.funcNum + 1
@@ -517,6 +594,7 @@ func (a *App) AppFuncListChange(b ButtonFunc) {
 func (a *App) Run() {
 
 	for i := 0; i < a.funcNum; i++ {
+		fmt.Println("这是第 ", i, "次执行")
 		a.funcList[i]()
 	}
 }
@@ -545,7 +623,7 @@ func (a *App) PageMain() {
 	splitStr := strings.Split(str, "\n")
 	//执行按钮对应的函数
 
-	a.Test2(splitStr[button.bePressed-1], orders[button.bePressed-1])
+	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
 	//并展示这个按钮对应的下一个要执行的函数 把他添加到
 	if button.bePressed == 1 {
 		a.AppFuncListChange(a.PageMain)
@@ -566,11 +644,11 @@ func (a *App) PageSubtitle1() {
 	orders := []ObserverInterfaceSlice{
 		ObserverInterfaceSlice{
 			//之后更改 &BookBorrow{}
-			&BookSearch{},
+			&BookBorrow{},
 		},
 		ObserverInterfaceSlice{
 			//之后更改 &BookBack{}
-			&BookSearch{},
+			&BookBack{},
 		},
 		ObserverInterfaceSlice{
 			//之后更改
@@ -578,12 +656,11 @@ func (a *App) PageSubtitle1() {
 		},
 		ObserverInterfaceSlice{
 			//之后更改&BookBorrowedRecord
-			&BookSearch{},
+			&BookBorrowedRecord{},
 		},
 	}
 	//执行按钮对应的函数
-	a.Test2(splitStr[button.bePressed-1], orders[button.bePressed-1])
-
+	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
 	//并展示这个按钮对应的下一个要执行的函数 把他添加到
 	if button.bePressed == 1 {
 		a.AppFuncListChange(a.PageSubtitle1)
@@ -597,6 +674,261 @@ func (a *App) PageSubtitle1() {
 
 }
 
+type BookBorrow struct {
+	//是否处在处罚时间内 如果用户处于处罚时间内他将不可以借书
+	IsInPenaltyTime bool
+	//用户借书的时候应该需要知道这个用户已经借了几本书借书的数量应该有限制
+	borrowUserHasBorrowBookNum int
+	//borrowUserId 是用户登陆的账号
+	borrowUserId string
+	//borrowedBook 是借书过程，我们通过数据库得到的书籍的信息
+	borrowedBook string
+	//通过这两个数据可以新增一个借书记录在数据库当中
+}
+
+func NewBookBorrow() *BookBorrow {
+	b := &BookBorrow{}
+	return b
+
+}
+func (b *BookBorrow) Input() error {
+	if userToken != "" {
+		b.borrowUserId = userToken
+	} else {
+		fmt.Println("Login timed out! Please login again!")
+		u := &UserLogin{}
+		WaitingForLegalInput(u)
+		err := u.Login()
+		//登陆成功才会更改userToken
+		if err == nil {
+			b.borrowUserId = userToken
+		}
+		fmt.Println("用户重新登陆成功...")
+	}
+	chooseBook := NewBookSerach()
+	WaitingForLegalInput(chooseBook)
+	chooseBook.Search()
+	//将查到的书籍的结果存储
+	value, ok := chooseBook.key["result"]
+	if ok {
+		switch v := value.(type) {
+		case string:
+			b.borrowedBook = v
+
+		}
+	} else {
+		fmt.Println("No books selected")
+	}
+
+	fmt.Println(b)
+	//拿着数据去数据库增加借阅记录，以及更该书籍被借阅的状态
+	fmt.Println(runFuncName(), "存储借书相关的信息已经处理完毕...")
+	return nil
+
+}
+
+func (b *BookBorrow) Create() error {
+	fmt.Println("Borrow Record Create ....")
+	fmt.Println("User:", b.borrowUserId, "has succeeded borrowed book ", b.borrowedBook)
+	return nil
+}
+func (b *BookBorrow) Update() error {
+	fmt.Println("Borrow State Update ....")
+	fmt.Println(b.borrowedBook, "state has changed")
+	return nil
+}
+
+func (b *BookBorrow) Search() error {
+	fmt.Println("Borrow Book Search ....")
+	return nil
+}
+func (b *BookBorrow) Verify() error {
+	fmt.Println("The system is judging whether you can borrow books now....")
+	//拿着 BookBorrow.borrowUserId去记录表里面查找
+	if b.IsInPenaltyTime == false && b.borrowUserHasBorrowBookNum < limitNum {
+		fmt.Println("Congratulations ~ You have  passed verification")
+		return nil
+	} else {
+		//由于您之前未按照指定的时间还书，您现在仍然处于不可借书阶段
+		fmt.Println("Sorry ~ You have not passed verification\nYou are still in the no-borrowing stage because you did not return the book by the specified time\n")
+		return errors.New("Dont not passed verification")
+	}
+	return nil
+}
+
+// Do 具体业务
+func (observer *BookBorrow) Do(o Observable) (err error) {
+	// code..
+	observer = NewBookBorrow()
+	WaitingForLegalInput(observer)
+	err = observer.Verify()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("BookBorrow  Verify Error")
+	}
+
+	err = observer.Create()
+
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("BookBorrow Create Error")
+	}
+
+	err = observer.Update()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("BookBorrow Update Error")
+	}
+
+	fmt.Println(runFuncName(), "借书相关的操作已经处理完毕...")
+	return
+}
+
+type BookBack struct {
+	//需要显示用户还书时间是否逾期
+
+	//如果逾期就交罚款 或者限制用户在某个时间内不可以再次借书 更新
+
+	//borrowUserId 是用户登陆的账号
+	backedBookUserId string
+	//borrowedBook 是借书过程，我们通过数据库得到的书籍的信息
+	backedBook string
+	//通过这两个数据可以新增一个借书记录在数据库当中
+
+}
+
+func NewBookBack() *BookBack {
+	b := &BookBack{}
+	return b
+}
+
+func (b *BookBack) Input() error {
+
+	if userToken != "" {
+		b.backedBookUserId = userToken
+	} else {
+		fmt.Println("Login timed out! Please login again!")
+		u := &UserLogin{}
+		WaitingForLegalInput(u)
+		err := u.Login()
+		//登陆成功才会更改userToken
+		if err == nil {
+			b.backedBookUserId = userToken
+		}
+		fmt.Println("用户重新登陆成功...")
+	}
+
+	fmt.Println("Please input the book")
+	fmt.Scan(&b.backedBook)
+
+	//让用户核对你所归还的书籍的信息
+	fmt.Println("User:", b.backedBookUserId, "Please check the information on the books you returned", b.backedBook)
+	//在还书的时候如果用户已经逾期，告诉他的信誉已经受损 本次还完书之后将会有为期30天的处罚期
+	//在处罚期间将不可以借书
+	err := b.Search()
+	if err != nil {
+		//您的信誉已经受到损伤，本次成功还完书籍之后将会有30天的处罚期，在处罚期间，你将不可以借书
+		fmt.Println("Your credit has been damaged,there will be a 30-day penalty period after the book is successfully repaid this time. During the penalty period, you will not be able to borrow the book")
+		return errors.New("Input Illegal!")
+
+	}
+
+	return nil
+
+}
+
+//更新所还书籍的状态
+func (b *BookBack) Update() error {
+	fmt.Println("Update in DB .....")
+	fmt.Println("Book:", b.backedBook, " state has update!")
+	return nil
+
+}
+
+//查找所借的书的时间 然后判断用户是否逾期，如果逾期要给他提示
+func (b *BookBack) Search() error {
+	//拿着BookBack.backedBook去查询用户是否确实借了这么一本书
+	fmt.Println("The system is determining whether you have borrowed the book ", b.backedBook, "......")
+	err := b.Verify()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("BookBack Error!")
+	} else {
+		fmt.Println("BookBack Verify success!")
+	}
+	fmt.Println("The  book you borrowed time is ", time.Now())
+	fmt.Println("没有逾期")
+	return nil
+}
+func (b *BookBack) Verify() error {
+	//拿着BookBack.backedBook去查询用户是否确实借了这么一本书
+	fmt.Println("Verify the  book", b.backedBook, " you borrowed success!")
+	return nil
+}
+
+// Do 具体业务
+func (observer *BookBack) Do(o Observable) (err error) {
+	// code..
+	observer = NewBookBack()
+	WaitingForLegalInput(observer)
+	observer.Update()
+	fmt.Println(runFuncName(), "还书籍相关的操作已经处理完毕...")
+	return nil
+}
+
+type BookBorrowedRecord struct {
+	borrowedBookUserId string
+	record             map[string]interface{}
+}
+
+func NewBookBorrowedRecord() *BookBorrowedRecord {
+	b := &BookBorrowedRecord{}
+	b.record = map[string]interface{}{}
+	return b
+}
+func (b *BookBorrowedRecord) Input() error {
+	b = NewBookBorrowedRecord()
+	if userToken != "" {
+		b.borrowedBookUserId = userToken
+	} else {
+		fmt.Println("Login timed out! Please login again!")
+		u := &UserLogin{}
+		WaitingForLegalInput(u)
+		err := u.Login()
+		//登陆成功才会更改userToken
+		if err == nil {
+			b.borrowedBookUserId = userToken
+		}
+		fmt.Println("用户重新登陆成功...")
+	}
+	err := b.Search()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("BookBorrowedRecord Search Error!")
+	}
+
+	return nil
+
+}
+
+func (b *BookBorrowedRecord) Search() error {
+	fmt.Println("The system is querying the borrowing status of the user：", b.borrowedBookUserId)
+	fmt.Println("Search success!")
+	b.record["result"] = "TestBookId-userborrowed"
+	fmt.Println("Your borrowed loan results are", b.record["result"])
+	return nil
+
+}
+
+// Do 具体业务
+func (observer *BookBorrowedRecord) Do(o Observable) (err error) {
+	// code..
+	observer = NewBookBorrowedRecord()
+	WaitingForLegalInput(observer)
+	fmt.Println(runFuncName(), "查询书籍借阅记录的相关的操作已经处理完毕...")
+	return
+}
+
 func Test1(order ObserverInterface, info ...string) {
 	// 创建 新增用户 “主题”
 	fmt.Println(info, " “主题” ")
@@ -608,7 +940,8 @@ func Test1(order ObserverInterface, info ...string) {
 	fmt.Println(info, " “主题”操作完毕 ")
 
 }
-func (a *App) Test2(info string, order ObserverInterfaceSlice) {
+
+func (a *App) ExecuteItem(info string, order ObserverInterfaceSlice) {
 	// 创建 新增用户 “主题”
 	fmt.Println(info[4:], " “主题” ")
 	orderUnPaidCancelSubject := &ObservableConcrete{}
@@ -623,6 +956,14 @@ func (a *App) Test2(info string, order ObserverInterfaceSlice) {
 
 }
 
-func Testttt() {
-
+func (a *App) Page(str string, orders []ObserverInterfaceSlice, appFuncListChange []ButtonFunc) {
+	button := newButton(str)
+	button.showPageInformation()
+	button.listenButtonBePressed()
+	splitStr := strings.Split(str, "\n")
+	//执行按钮对应的函数
+	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
+	//添加下一个要执行的函数到队列
+	a.AppFuncListChange(appFuncListChange[button.bePressed-1])
+	a.funcNum = a.funcNum + 1
 }
