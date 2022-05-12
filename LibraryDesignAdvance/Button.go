@@ -18,6 +18,7 @@ import (
 )
 
 //用户一旦登陆就立即保存用户的登陆状态
+
 var userToken string
 var limitNum int
 
@@ -32,7 +33,7 @@ type Observable interface {
 	Notify() error
 }
 
-// ObservableConcrete 一个具体的 订单状态变化的被观察者
+// ObservableConcrete 一个具体的订单状态变化的被观察者
 type ObservableConcrete struct {
 	observerList []ObserverInterface
 }
@@ -200,39 +201,19 @@ type BookCreate struct {
 	DetailsInformation map[string]interface{}
 }
 
-/*
-00马克思列宁主义、毛泽东思想
-10哲学
-20社会科学
-21历史、历史学
-27经济、经济学
-31政治、社会生活
-34法律、法学
-36军事、军事学
-37文化、科学、教育、体育
-41语言、文字学
-42文学
-48艺术
-49无神论、宗教学
-50自然科学
-51数学
-52力学
-53物理学
-54化学
-55天文学
-56地质、地理科学
-58生物科学
-61医药、卫生
-65农业科学
-71技术科学
-90综合性图书
-*/
+func NewBookCreate() *BookCreate {
+	b := &BookCreate{}
+	b.DetailsInformation = make(map[string]interface{})
+	return b
+}
+
 func (b *BookCreate) Input() (err error) {
+
 	b.DetailsInformation = make(map[string]interface{})
 
 	prompt := NewPrompt()
 	prompt.Show("bookClassification")
-	classificationMap := map[string]bool{"00": true, "10": true, "20": true, "21": true, "27": true, "31": true, "34": true, "36": true, "37": true, "41": true, "42": true, "48": true, "49": true, "50": true, "51": true, "52": true, "53": true, "54": true, "55": true, "56": true, "58": true, "61": true, "65": true, "71": true, "90": true}
+	classificationMap := map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true, "F": true, "G": true, "H": true, "I": true, "J": true, "K": true, "N": true, "O": true, "P": true, "Q": true, "R": true, "S": true, "T": true, "U": true, "V": true, "X": true, "Z": true}
 
 	var temp string
 	fmt.Print("Please input book classification:")
@@ -247,11 +228,16 @@ func (b *BookCreate) Input() (err error) {
 	fmt.Scanln(&temp)
 	b.DetailsInformation["bookAuthor"] = temp
 
+	fmt.Print("Please input Book Name：")
+	fmt.Scanln(&temp)
+	b.DetailsInformation["bookName"] = temp
+
 	fmt.Print("Please input Book Price:：")
 	fmt.Scanln(&temp)
 	b.DetailsInformation["bookPrice"] = temp
 
 	fmt.Print("Please enter whether to put on the shelf (Y|N）or(y|n)[ Y-Yes| N-No ]")
+	//y Y代表书籍是上架的状态
 	fmt.Scanln(&temp)
 
 	if strings.ToLower(string(temp[0])) == "y" {
@@ -261,7 +247,7 @@ func (b *BookCreate) Input() (err error) {
 	} else {
 		return errors.New("wrong happend in input")
 	}
-
+	//"classification"  "bookState"   "bookPrice" "bookAuthor"
 	return err
 
 }
@@ -274,6 +260,7 @@ func (b *BookCreate) Create() (err error) {
 // Do 具体业务
 func (observer *BookCreate) Do(o Observable) (err error) {
 	// code...
+	observer = NewBookCreate()
 	WaitingForLegalInput(observer)
 	fmt.Println(observer.DetailsInformation)
 	observer.Create()
@@ -372,7 +359,8 @@ func (b *BookSearch) Search() (err error) {
 	//fmt.Println("b.key[b.target]", b.key[b.target])
 	// b.key已经被赋值，现在根据b.target 以及查找所需要的数据去数据库查找了
 	fmt.Println("Searching in DB...")
-	b.key["result"] = "test-searchedbookIdInDB"
+	//把查找到的所有的结果都存放在result键值对里面
+	b.key["result"] = map[string]interface{}{"Id": 1, "classification": "A", "bookState": "y", "bookPrice": 100, "bookAuthor": "鲁迅"}
 	fmt.Println("Searching in DB success!")
 	//打印查询结果
 	//b.SerchInDB()Result 获取到结果 存储在Result里面
@@ -554,6 +542,8 @@ func MainPageOrdersInit() []ObserverInterfaceSlice {
 	orders := []ObserverInterfaceSlice{
 		ObserverInterfaceSlice{
 			&GeneralUserCreate{},
+			//这是一个切片
+			//还可以添加更多的切片
 		},
 		ObserverInterfaceSlice{
 			&UserLogin{},
@@ -561,18 +551,65 @@ func MainPageOrdersInit() []ObserverInterfaceSlice {
 		ObserverInterfaceSlice{
 			&BookSearch{},
 		},
+		//超级管理员登陆
+		ObserverInterfaceSlice{
+			&RootUser{},
+		},
+		//退出App
+
 	}
 
 	return orders
 
 }
+
 func (a *App) MainPageAppFuncListChangeInit() []ButtonFunc {
+	/*
+
+	 */
+
 	appFuncListChange := []ButtonFunc{
 		a.PageMain,
 		a.PageSubtitle1,
 		a.PageMain,
+		a.PageSubtitle2,
 	}
 	return appFuncListChange
+}
+func (a *App) Subtitle1PageOrdersInit() []ObserverInterfaceSlice {
+
+	orders := []ObserverInterfaceSlice{
+		ObserverInterfaceSlice{
+			//之后更改 &BookBorrow{}
+			&BookBorrow{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改 &BookBack{}
+			&BookBack{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改
+			&BookSearch{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改&BookBorrowedRecord
+			&BookBorrowedRecord{},
+		},
+	}
+
+	return orders
+
+}
+func (a *App) Subtitle1PageFuncListChangeInit() []ButtonFunc {
+
+	appFuncListChange := []ButtonFunc{
+		a.PageSubtitle1,
+		a.PageSubtitle1,
+		a.PageSubtitle1,
+		a.PageSubtitle1,
+	}
+	return appFuncListChange
+
 }
 
 //------------------------------------------------------------------------------------
@@ -582,7 +619,8 @@ func NewApp() *App {
 	}
 	orders := MainPageOrdersInit()
 	appFuncListChange := a.MainPageAppFuncListChangeInit()
-	a.Page(">>1.用户注册\n>>2.用户登陆\n>>3.书籍查询\n", orders, appFuncListChange)
+	pageMainStr := ">>1.用户注册\n>>2.用户登陆\n>>3.书籍查询\n>>4.图书管理员登陆\n"
+	a.Page(pageMainStr, orders, appFuncListChange)
 	return a
 }
 
@@ -597,6 +635,20 @@ func (a *App) Run() {
 		fmt.Println("这是第 ", i, "次执行")
 		a.funcList[i]()
 	}
+}
+
+//a.PageMain
+//[]ButtonFunc{a.PageMain,a.PageSubtitle1,a.PageMain}
+func (a *App) Page(str string, orders []ObserverInterfaceSlice, appFuncListChange []ButtonFunc) {
+	button := newButton(str)
+	button.showPageInformation()
+	button.listenButtonBePressed()
+	splitStr := strings.Split(str, "\n")
+	//执行按钮对应的函数
+	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
+	//添加下一个要执行的函数到队列
+	a.AppFuncListChange(appFuncListChange[button.bePressed-1])
+	a.funcNum = a.funcNum + 1
 }
 
 func (a *App) PageMain() {
@@ -670,6 +722,44 @@ func (a *App) PageSubtitle1() {
 		a.AppFuncListChange(a.PageSubtitle1)
 	} else {
 		a.AppFuncListChange(a.PageSubtitle1)
+	}
+
+}
+func (a *App) PageSubtitle2() {
+	str := ">>1.上架书籍\n>>2.下架书籍\n>>3.查询书籍\n>>4.查看读者借阅记录"
+	button := newButton(str)
+	button.showPageInformation()
+	button.listenButtonBePressed()
+	splitStr := strings.Split(str, "\n")
+	orders := []ObserverInterfaceSlice{
+		ObserverInterfaceSlice{
+			//之后更改 &BookBorrow{}
+			&BookCreate{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改 &BookBack{}
+			&BookRemove{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改
+			&BookSearch{},
+		},
+		ObserverInterfaceSlice{
+			//之后更改&BookBorrowedRecord
+			&BookBorrowedRecord{},
+		},
+	}
+	//执行按钮对应的函数
+	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
+	//并展示这个按钮对应的下一个要执行的函数 把他添加到
+	if button.bePressed == 1 {
+		a.AppFuncListChange(a.PageSubtitle2)
+	} else if button.bePressed == 2 {
+		a.AppFuncListChange(a.PageSubtitle2)
+	} else if button.bePressed == 3 {
+		a.AppFuncListChange(a.PageSubtitle2)
+	} else {
+		a.AppFuncListChange(a.PageSubtitle2)
 	}
 
 }
@@ -862,7 +952,7 @@ func (b *BookBack) Search() error {
 }
 func (b *BookBack) Verify() error {
 	//拿着BookBack.backedBook去查询用户是否确实借了这么一本书
-	fmt.Println("Verify the  book", b.backedBook, " you borrowed success!")
+	fmt.Println("Verify the  book", b.backedBook, " whether you borrowed ......")
 	return nil
 }
 
@@ -956,14 +1046,114 @@ func (a *App) ExecuteItem(info string, order ObserverInterfaceSlice) {
 
 }
 
-func (a *App) Page(str string, orders []ObserverInterfaceSlice, appFuncListChange []ButtonFunc) {
-	button := newButton(str)
-	button.showPageInformation()
-	button.listenButtonBePressed()
-	splitStr := strings.Split(str, "\n")
-	//执行按钮对应的函数
-	a.ExecuteItem(splitStr[button.bePressed-1], orders[button.bePressed-1])
-	//添加下一个要执行的函数到队列
-	a.AppFuncListChange(appFuncListChange[button.bePressed-1])
-	a.funcNum = a.funcNum + 1
+type RootUser struct {
+	account  string
+	password string
+}
+
+func NewRootUser() *RootUser {
+	r := &RootUser{}
+	return r
+}
+func (r *RootUser) Input() error {
+
+	fmt.Println("Please Input New Root User Account:")
+	fmt.Scan(&r.account)
+	_, err := regexp.MatchString("^[0-1]{10}$", r.account)
+	if err != nil {
+		return errors.New("wrong happend in input Root User Account")
+	}
+
+	fmt.Println("Please input Root User Password:")
+	fmt.Scan(&r.password)
+	_, err = regexp.MatchString("^[0-9a-zA-Z]{6,30}$", r.password)
+	if err != nil {
+		return errors.New("wrong happend in input user password")
+	}
+
+	return nil
+
+}
+
+type LoginInterface interface {
+	Login() error
+}
+
+func LoginService(l LoginInterface) {
+	for {
+		err := l.Login()
+		if err == nil {
+			break
+		}
+	}
+}
+func (r *RootUser) Login() error {
+	//等待合法的输入
+	WaitingForLegalInput(r)
+	err := r.SerchInDB()
+	if err != nil {
+		fmt.Println("输入的账号或者密码不正确...")
+		return err
+	} else {
+		fmt.Println("Root User login  success!")
+	}
+	//如果查找失败就返回err
+	return nil
+}
+
+func (r *RootUser) SerchInDB() error {
+
+	fmt.Println("User password and account search success!")
+	fmt.Println("Account and password are verified...")
+	return nil
+}
+
+func (observer *RootUser) Do(o Observable) (err error) {
+	observer = NewRootUser()
+	LoginService(observer)
+	fmt.Println(runFuncName(), "Root用户登陆的相关的操作已处理完毕...")
+	return nil
+	//
+}
+
+//下架书籍
+type BookRemove struct {
+	bookId int
+	//要下架的书籍在数据库的id
+	//根据要下架的信息查找
+	information map[string]interface{}
+	target      string
+}
+
+func NewBookRemove() *BookRemove {
+	b := &BookRemove{
+		0,
+		make(map[string]interface{}),
+		"",
+	}
+	return b
+}
+
+func (b *BookRemove) Update() error {
+
+	fmt.Println("The information for the book to be removed is: ", b.information)
+	fmt.Print("Update Success ！The status of the book has been changed to not available for borrowing！")
+	return nil
+}
+
+func (observer *BookRemove) Do(o Observable) (err error) {
+	bookForSearch := NewBookSerach()
+	WaitingForLegalInput(bookForSearch)
+	bookForSearch.Search()
+	fmt.Println(runFuncName(), "查询书籍相关的操作已经处理完毕...")
+	observer = NewBookRemove()
+	// Copy from the original map to the target map
+	for key, value := range bookForSearch.key {
+		if key == "result" {
+			observer.information[key] = value
+		}
+
+	}
+	observer.Update()
+	return nil
 }
