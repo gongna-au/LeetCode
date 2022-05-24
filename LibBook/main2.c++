@@ -447,7 +447,6 @@ class NotifyReader: public IObserver {
     }
     void Update() override {
             cout<<"正在执行业务函数-通知逾期读者\n";
-            SearchInDB();
             cout<<"通知逾期读者业务函数执行结束\n";
     }
 };
@@ -556,16 +555,15 @@ void ExcuteInterfaceFunc(ISubject* s ,IObserver * o){
 //页面的刷新？就是button的重新赋值 
 class Page {
     public:
-    int lastpageId;
     Subject * subject;
     Button* button;
     map<string,IObserver*> buttonfuncMap;
 
     //只调用一次
     Page(Subject *s ){
-        lastpageId=0;
         subject=s;
     };
+
     //每个页面都知道每个按钮被按下时将会发生什么 只要传进去我们需要的按钮
     //就会得到得到新的页面 并且监听执行 
     void PageFeaturesInit( string a[] ,int n,IObserver* funcList[]){
@@ -598,22 +596,16 @@ class Page {
             //之前的函数List
         }  */
 
-        /* IObserver* o=this->buttonfuncMap[button->bePressed];
+        
+        IObserver* o=this->buttonfuncMap[button->bePressed];
         //调用触发的函数进行执行
         ExcuteInterfaceFunc(subject,o); 
-        this->buttonfuncMap.clear(); */
+        this->buttonfuncMap.clear();
         cout<<"This page listens user input over!"<<endl;
         //一定一定要记得清空map!!!!
+        
     };
-    void PageExcute(){
-        IObserver* o=this->buttonfuncMap[button->bePressed];
-         //调用触发的函数进行执行
-        ExcuteInterfaceFunc(subject,o); 
-        this->buttonfuncMap.clear();
-        cout<<"This page excute  over!"<<endl;
-    }
     void PageRefresh(string a[] ,int n,IObserver* funcList[]){
-        //标记上一个页面是哪个页面
         //修改原来的button
         //更新按钮
         cout<<"Start refreshing the page......"<<endl;
@@ -630,9 +622,8 @@ class Page {
         cout<<"Refresh page over!"<<endl;
 
     };
-    void SetLastPageId(int id){
-        this->lastpageId=id;
-    }
+
+    
 };
 
 
@@ -651,13 +642,32 @@ class Page {
        delete u1;
     }
  */
+class App{
+    public:
+    //都是单例
+    Subject*  subject ;
+    //都是单例
+    //全局都只初始化一次
+    Page*     page;
+
+    App(Subject *s,Page*p){
+        this->subject=s;
+        this->page=p;
+    };
+    void AppInit(string a[] ,int n,IObserver* funcList[]){
+        page->PageFeaturesInit(a,3,funcList);
+        page->PageListen();
+    };
+
+    void pageRefresh(string a[] ,int n,IObserver* funcList[]){
+        this->page->PageRefresh(a,n,funcList);
+    };
+    void pageRun(){
+        this->page->PageListen();
+    };
 
 
-
-
-// page0--读者注册","读者登陆","管理员登陆
-// page1--"搜索图书","借阅图书","归还书籍"
-// page3--"搜索图书","归还书籍","通知逾期读者归还书籍"
+};
 int main(){ 
     //全局的观察者
     Subject *subject = new Subject;
@@ -673,201 +683,44 @@ int main(){
     if */ 
 
     string a[]={"读者注册","读者登陆","管理员登陆"};
-        IObserver* funcList[]={
+    IObserver* funcList[]={
+        new GeneralUserCreate(),
+        new UserLogin(),
+        new SuperUserLogin(),
+    };
+    page->PageFeaturesInit(a,3,funcList);
+    page->PageListen();
+    if (page->button->bePressed.compare("0")==0){
+        string tempbutton[]={"读者注册","读者登陆","管理员登陆"};
+        IObserver* tempfuncList[]={
             new GeneralUserCreate(),
             new UserLogin(),
             new SuperUserLogin(),
         };
-        page->PageFeaturesInit(a,3,funcList);
+        page->PageRefresh(tempbutton,1,tempfuncList);
         page->PageListen();
-        page->PageExcute();
-    
-        
-        int  pageId =0;
-        if (page->button->bePressed.compare("0")==0){
-                   //下一次要刷新的准备
-                    string tempbutton[]={"读者注册","读者登陆","管理员登陆"};
-                    IObserver* tempfuncList[]={
-                        new GeneralUserCreate(),
-                        new UserLogin(),
-                        new SuperUserLogin(),
-                    };
-                    page->PageRefresh(tempbutton,3,tempfuncList);
-                    page->PageListen();
-                    page->PageExcute();
-                    if (page->button->bePressed.compare("0")==0){
-                        pageId=0;
-                    }else if (page->button->bePressed.compare("1")==0){
-                        pageId=1;
-                    }else if (page->button->bePressed.compare("2")==0){
-                        pageId=2;
-                    }
 
-                    
+    }else if(page->button->bePressed.compare("1")==0){
+        string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
+        IObserver* tempfuncList[]={
+            new SearchBook(),
+            new BorrowBook(),
+            new BackBook(),
+        };
+        page->PageRefresh(tempbutton,3,tempfuncList);
+        page->PageListen();
 
-        }else if(page->button->bePressed.compare("1")==0){
-                string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
-                IObserver* tempfuncList[]={
-                    new SearchBook(),
-                    new BorrowBook(),
-                    new BackBook(),
-                };
-                page->PageRefresh(tempbutton,3,tempfuncList);
-                page->PageListen();
-                page->PageExcute();
-                if (page->button->bePressed.compare("0")==0){
-                        pageId=1;
-                }else if (page->button->bePressed.compare("1")==0){
-                        pageId=1;
-                }else if (page->button->bePressed.compare("2")==0){
-                        pageId=1;
-                }
+    }else if(page->button->bePressed.compare("2")==0){
+        string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
+        IObserver* tempfuncList[]={
+            new SearchBook(),
+            new BackBook(),
+            new NotifyReader(),
+        };
+        page->PageRefresh(tempbutton,3,tempfuncList);
+        page->PageListen();
+    }
 
-
-        }else if(page->button->bePressed.compare("2")==0){
-                string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
-                IObserver* tempfuncList[]={
-                    new SearchBook(),
-                    new BackBook(),
-                    new NotifyReader(),
-                };
-                page->PageRefresh(tempbutton,3,tempfuncList);
-                page->PageListen();
-                page->PageExcute();
-
-                if (page->button->bePressed.compare("0")==0){
-                        pageId=2;
-                }else if (page->button->bePressed.compare("1")==0){
-                        pageId=2;
-                }else if (page->button->bePressed.compare("2")==0){
-                        pageId=2;
-                }
-
-
-        }
-        for (;;){
-
-                if (pageId==0){
-
-                        if (page->button->bePressed.compare("0")==0){
-                            //下一次要刷新的准备
-                                string tempbutton[]={"读者注册","读者登陆","管理员登陆"};
-                                IObserver* tempfuncList[]={
-                                    new GeneralUserCreate(),
-                                    new UserLogin(),
-                                    new SuperUserLogin(),
-                                };
-                                page->PageRefresh(tempbutton,3,tempfuncList);
-                                page->PageListen();
-                                page->PageExcute();
-                                if (page->button->bePressed.compare("0")==0){
-                                    pageId=0;
-                                }else if (page->button->bePressed.compare("1")==0){
-                                    pageId=1;
-                                }else if (page->button->bePressed.compare("2")==0){
-                                    pageId=2;
-                                }
-
-                                
-
-                    }else if(page->button->bePressed.compare("1")==0){
-                            string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
-                            IObserver* tempfuncList[]={
-                                new SearchBook(),
-                                new BorrowBook(),
-                                new BackBook(),
-                            };
-                            page->PageRefresh(tempbutton,3,tempfuncList);
-                            page->PageListen();
-                            page->PageExcute();
-                            if (page->button->bePressed.compare("0")==0){
-                                    pageId=1;
-                            }else if (page->button->bePressed.compare("1")==0){
-                                    pageId=1;
-                            }else if (page->button->bePressed.compare("2")==0){
-                                    pageId=1;
-                            }
-
-
-                    }else if(page->button->bePressed.compare("2")==0){
-                            string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
-                            IObserver* tempfuncList[]={
-                                new SearchBook(),
-                                new BackBook(),
-                                new NotifyReader(),
-                            };
-                            page->PageRefresh(tempbutton,3,tempfuncList);
-                            page->PageListen();
-                            page->PageExcute();
-
-                            if (page->button->bePressed.compare("0")==0){
-                                    pageId=2;
-                            }else if (page->button->bePressed.compare("1")==0){
-                                    pageId=2;
-                            }else if (page->button->bePressed.compare("2")==0){
-                                    pageId=2;
-                            }
-
-
-                    }
-
-
-    
-            }else if (pageId==1){
-                    string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
-                    IObserver* tempfuncList[]={
-                        new SearchBook(),
-                        new BorrowBook(),
-                        new BackBook(),
-                    };
-                    page->PageRefresh(tempbutton,3,tempfuncList);
-                    page->PageListen();
-                    page->PageExcute();
-                    if (page->button->bePressed.compare("0")==0){
-                            pageId=1;
-                    }else if (page->button->bePressed.compare("1")==0){
-                            pageId=1;
-                    }else if (page->button->bePressed.compare("2")==0){
-                            pageId=1;
-                    }
-
-
-            
-            }else if (pageId==2){
-                string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
-                    IObserver* tempfuncList[]={
-                        new SearchBook(),
-                        new BackBook(),
-                        new NotifyReader(),
-                    };
-                    page->PageRefresh(tempbutton,3,tempfuncList);
-                    page->PageListen();
-                    page->PageExcute();
-
-                    if (page->button->bePressed.compare("0")==0){
-                            pageId=2;
-                    }else if (page->button->bePressed.compare("1")==0){
-                            pageId=2;
-                    }else if (page->button->bePressed.compare("2")==0){
-                            pageId=2;
-                    }
-
-
-            }
-
-        }
-
-       
-
-       
-        //
-
-        
-
-
-    
-   
-     
     
     /* else if (page->button->bePressed.compare("1")==0){
          string a[]={"读者注册","读者登陆","搜索图书"};

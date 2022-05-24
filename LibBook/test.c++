@@ -9,7 +9,6 @@
 #include<typeinfo>
 
 
-
 using namespace std;
 
 bool InputIsLegal(string legalOptions,string bePressed){
@@ -22,7 +21,14 @@ bool InputIsLegal(string legalOptions,string bePressed){
          return true;
     }
         
-}
+};
+class Temp{
+    public:
+    string name;
+    Temp(string str){
+        name=str;
+    };
+};
 class test{
     public:
     list<string> values;
@@ -42,17 +48,38 @@ class test{
 
 };
 
+class Result{
+    int n;
+    list<Temp*> list;
+};
+
+Temp test( string s ,int pageId){
+
+    if (pageId==0){
+        
+
+
+    }else if (pageId==1){ 
+
+    }else if (pageId==2){
+
+
+
+    }
+
+    
+
+
+
+
+
+
+
+
+}
+
+
 int main(){
-
-   auto t = chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	std::cout  << std::put_time(std::localtime(&t), "%F %T") << std::endl;
- 
-	//转为字符串
-	std::stringstream ss;
-	ss << std::put_time(std::localtime(&t), "%F %T");
-	std::string str = ss.str();
- 
-	return 0;
-
+   
 
 }
