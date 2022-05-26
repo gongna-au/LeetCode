@@ -148,6 +148,9 @@ class  SuperUserCreate: public IObserver {
             cout << iter->first << " : " << iter->second << endl;
         }
   }
+  void InsertInDB(){
+      cout << "往数据库插入图书管理员成功！\n";
+  }
   virtual ~SuperUserCreate() {
     cout << "新增图书管理员相关的操作处理完毕...\n";
   }
@@ -155,6 +158,7 @@ class  SuperUserCreate: public IObserver {
   void Update() override {
        cout<<"正在执行业务函数-新增图书管理员\n";
         Input();
+        InsertInDB();
         cout<<"新增图书管理员业务函数执行结束\n";
   }
   
@@ -202,6 +206,7 @@ class  UserLogin: public IObserver {
   void Update() override {
         cout<<"正在执行业务函数-读者登陆\n";
         Input();
+        SearchInDB();
         cout<<"读者登陆业务函数执行结束!\n";
   }
   
@@ -250,6 +255,7 @@ class  SuperUserLogin: public IObserver {
     void Update() override {
             cout<<"正在执行业务函数-图书管理员登陆\n";
             Input();
+            SearchInDB();
             cout<<"图书管理员登陆业务函数执行结束\n";
     }
   
@@ -297,6 +303,7 @@ class  UserDelete: public IObserver {
     void Update() override {
             cout<<"正在执行业务函数-注销用户\n";
             Input();
+            SearchInDB();
             cout<<"注销用户业务函数执行结束\n";
     }
 };
@@ -330,11 +337,12 @@ class  SearchBook: public IObserver {
         return true;
     }
     virtual ~SearchBook() {
-        cout << "注销用户相关的操作处理完毕...\n";
+        cout << "查找书籍相关的操作处理完毕...\n";
     }
     void Update() override {
             cout<<"正在执行业务函数-查找书籍\n";
             Input();
+            SearchInDB();
             cout<<"查找书籍业务函数执行结束\n";
     }
 };
@@ -375,6 +383,7 @@ class  BorrowBook: public IObserver {
     void Update() override {
             cout<<"正在执行业务函数-借阅书籍\n";
             Input();
+            SearchInDB();
             cout<<"借阅书籍业务函数执行结束\n";
     }
 };
@@ -415,6 +424,7 @@ class  BackBook: public IObserver {
     void Update() override {
             cout<<"正在执行业务函数-归还书籍\n";
             Input();
+            SearchInDB();
             cout<<"归还书籍业务函数执行结束\n";
     }
 };
@@ -451,12 +461,394 @@ class NotifyReader: public IObserver {
             cout<<"通知逾期读者业务函数执行结束\n";
     }
 };
+class Book {
+    public:
+    string ISBN;
+    string Title;
+    string Subject;
+    string Publisher;
+    string Language;
+    string Author;
+    public:
+    Book(){
+    };
+    void Input (){
+        cout<<"Please inoup book ISBN:";
+        cin>>ISBN;
+        cout<<"Please inoup book Title:";
+        cin>>Title;
+        cout<<"Please inoup book Subject:";
+        cin>>Subject;
+        cout<<"Please inoup book Publisher:";
+        cin>>Publisher;
+        cout<<"Please inoup book Language:";
+        cin>>Language;
+        cout<<"Please inoup book Author:";
+        cin>>Author;
+    }
+    void ShowBookInfo(){
+            cout<<"ISBN:"<<ISBN<<endl;
+            cout<<"Title:"<<Title<<endl;
+            cout<<"Subject:"<<Subject<<endl;
+            cout<<"Publisher:"<<Publisher<<endl;
+            cout<<"Language:"<<Language<<endl;
+            cout<<"Author:"<<Author<<endl;
+    }
+};
+
+class AddBook: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+    AddBook(){  
+    }
+    void Input(){
+        cout << "请输入要上架的书籍的信息:";
+        Book* book= new Book();
+        book->Input();
+        bookList.push_back(book); 
+
+    }
+     //数据库和文件操作
+    bool InsertInDB(){
+        cout << "正在往数据库添加书籍\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "书籍添加成功！\n";
+        return true;
+    }
+    virtual ~AddBook() {
+        cout << "添加书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-往数据库添加书籍\n";
+            Input();
+            InsertInDB();
+            cout<<"添加书籍业务函数处理完毕\n";
+    }
+};
+
+class DeleteBook: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+    DeleteBook(){
+             
+    }
+    void Input(){
+        cout << "请输入要删除的书籍的信息:";
+        Book* book= new Book();
+        book->Input();
+        bookList.push_back(book); 
+    }
+     //数据库和文件操作
+    bool DeleteInDB(){
+        cout << "正在删除目标书籍......\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "目标书籍删除成功！\n";
+        return true;
+    }
+    virtual ~  DeleteBook() {
+        cout << "删除书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-删除数据库中的目标书籍\n";
+            Input();
+            DeleteInDB();
+            cout<<"删除数据库中的目标书籍业务函数处理完毕\n";
+    }
+};
+
+class EditBook: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+   EditBook(){
+           
+    }
+    void Input (){
+
+        Book* book= new Book();
+        cout << "请输入更新后的书籍信息\n";
+        book->Input();
+        bookList.push_back(book);  
+
+    }
+     //数据库和文件操作
+    bool UpdateInDB(){
+        cout << "正在更新目标书籍......\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "目标书籍更新成功！\n";
+        return true;
+    }
+    virtual ~   EditBook() {
+        cout << "更新书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-删除数据库中的目标书籍\n";
+            Input();
+            UpdateInDB();
+            cout<<"删除数据库中的目标书籍业务函数处理完毕\n";
+    }
+};
+
+//Reserve
+class ReserveBook: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+   ReserveBook(){
+       // cout << "新增一笔预定书籍业务\n";      
+    }
+    void Input(){
+        cout << "请输入预定的书籍信息\n";
+        Book* book= new Book();
+        book->Input();
+        bookList.push_back(book);
+    }
+     //数据库和文件操作
+    bool ReserveInDB(){
+        cout << "正在预定目标书籍......\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "预定目标书籍更新成功！\n";
+        return true;
+    }
+    virtual ~   ReserveBook() {
+        cout << "预定书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-预定数据库中的目标书籍\n";
+            Input();
+            ReserveInDB();
+            cout<<"预定数据库中的目标书籍业务函数处理完毕\n";
+    }
+};
+//Cancel
+
+class ReserveCancel: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+   ReserveCancel(){
+        //cout << "新增一笔取消预定书籍业务\n"; 
+    }
+     void Input(){
+        cout << "请输入取消预定的书籍信息\n";
+        Book* book= new Book();
+        book->Input();
+        bookList.push_back(book);
+    }
+    
+
+     //数据库和文件操作
+    bool ReserveInDB(){
+        cout << "正在取消预定......\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "取消预定操作成功！\n";
+        return true;
+    }
+    virtual ~   ReserveCancel() {
+        cout << "取消预定书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-取消预定书籍\n";
+            Input();
+            ReserveInDB();
+            cout<<"取消预定书籍业务函数处理完毕\n";
+    }
+};
+
+//redecorate
+
+class RedeCorateBook: public IObserver {
+    public:
+    list<Book* >  bookList;
+    public:
+   RedeCorateBook(){
+        //cout << "新增一笔续借书籍业务\n";
+    }
+    void Input(){
+        cout << "请输入续借的书籍信息\n";
+        Book* book= new Book();
+        book->Input();
+        bookList.push_back(book);
+    }
+     //数据库和文件操作
+    bool ReserveInDB(){
+        cout << "正在续借书籍......\n";
+        bookList.back()->ShowBookInfo(); 
+        cout << "续借书籍操作成功！\n";
+        return true;
+    }
+    virtual ~   RedeCorateBook() {
+        cout << "续借书籍相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-续借书籍\n";
+            Input();
+            ReserveInDB();
+            cout<<"续借书籍业务函数处理完毕\n";
+    }
+};
+class Fine{
+    public:
+    int Amount;
+    string FinedAccount;
+    Fine(){
+        cout<<"Please input FinedAccountId:";
+        cin>>FinedAccount;
+        //罚款金额
+        cout<<"Please input penalty:";
+        cin>>Amount;
+    };
+
+};
 
 
+//Fine 
+class ReaderFine: public IObserver {
+    public:
+    list<Fine* >  fineList;
+    public:
+   ReaderFine(){
+       //cout << "新增一笔读者缴纳罚款业务\n";
+         
+    }
+    void Input(){
+         cout << "请输入罚款相关信息：\n";
+         Fine* fine= new Fine();
+         fineList.push_back(fine);   
+    }
+     //数据库和文件操作
+    bool payFines(){
+        cout << "正在缴纳罚款......\n";
+        cout << "缴纳罚款操作成功！\n";
+        return true;
+    }
+    virtual ~   ReaderFine() {
+        cout << "缴纳罚款相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-缴纳罚款\n";
+            Input();
+            payFines();
+            cout<<"缴纳罚款业务函数处理完毕\n";
+    }
+};
+
+class SearchItem{
+    public:
+    ~SearchItem(){
+    };
+    virtual void TitleSearch() = 0;
+    virtual void AuthorSearch() = 0;
+    virtual void SubjectSearch() = 0;
+    virtual void PublicationbDateSearch() = 0;
+    virtual int GetChoiceType() = 0;
+};
 
 
+class SearchChoiceItem: public SearchItem{
+    public:
+    list<string> itemList;
+    int searchType;
+    list<string> userInputInfoList;
+    public:
+    SearchChoiceItem(){
+        itemList.push_back("Title");
+        itemList.push_back("Subject");
+        itemList.push_back("Publisher");
+        itemList.push_back("Author");
+        int i=0;
+        for (list<string> :: iterator it=itemList.begin();it!=itemList.end();it++){
+                cout<<">>"<<i<<(*it)<<endl;
+                i++;
+        }
+        cout<<"Please input your choice :";
+           
+        for(;;){
+             cin>>searchType;
+            if (searchType>=0 && searchType<i){ 
+                break;
+            }else{
+                cout<<"Input Ilegal!Please input again!"<<endl;
+            }
+        }
+
+    };
+     //数据库和文件操作
+     void TitleSearch()override{
+         cout << "请输入书籍标题:";
+         string info;
+         cin>>info;
+         userInputInfoList.push_front(info);
+     };
+
+     void AuthorSearch() override{
+            cout << "请输入书籍作者:";
+            string info;
+            cin>>info;
+            userInputInfoList.push_front(info);
+     };
+     void SubjectSearch()override{
+         cout << "请输入学科类别:";
+         string info;
+        cin>>info;
+        userInputInfoList.push_front(info);
+     };
+     void  PublicationbDateSearch()override{
+         cout << "请输入出版时间:";
+         string info;
+         cin>>info;
+         userInputInfoList.push_front(info);
+
+     };
+     int GetChoiceType(){
+         return searchType;
+     };
+
+ 
+};
 
 
+class SearchBycatalog: public IObserver {
+    public:
+    //抽象的接口做参数
+    SearchItem* item;
+    public:
+   SearchBycatalog( ){
+      
+    }
+    void Input(){
+
+        SearchChoiceItem* s=new SearchChoiceItem();
+         if(s->searchType==0){
+             s->TitleSearch();
+        }else if(s->searchType==1){
+            s->SubjectSearch();
+        }else if(s->searchType==2){
+            s->PublicationbDateSearch();
+
+        }else if(s->searchType==3){
+            s->AuthorSearch();
+            
+        }
+    }
+     //数据库和文件操作
+    bool SearchInDB(){
+        cout << "正在查找......\n";
+        cout << "查找操作成功！\n";
+        return true;
+    }
+    virtual ~   SearchBycatalog() {
+        cout << "按照书籍的不同类别查找相关的操作处理完毕...\n";
+    }
+    void Update() override {
+            cout<<"正在执行业务函数-按照书籍的不同类别查找书籍\n";
+            Input();
+            SearchInDB();
+            cout<<"按照书籍的不同类别查找书籍业务函数处理完毕\n";
+    }
+};
 
 //--------------------------------------实现监听获得用户的输入-----------------------
 class Button {
@@ -706,13 +1098,16 @@ int main(){
                     
 
         }else if(page->button->bePressed.compare("1")==0){
-                string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
+                string tempbutton[]={"搜索图书","借阅图书","归还书籍","预定书籍","取消预定","续借书籍"};
                 IObserver* tempfuncList[]={
-                    new SearchBook(),
+                    new SearchBycatalog(),
                     new BorrowBook(),
                     new BackBook(),
+                    new ReserveBook(),
+                    new ReserveCancel(),
+                    new RedeCorateBook(),
                 };
-                page->PageRefresh(tempbutton,3,tempfuncList);
+                page->PageRefresh(tempbutton,6,tempfuncList);
                 page->PageListen();
                 page->PageExcute();
                 if (page->button->bePressed.compare("0")==0){
@@ -720,18 +1115,29 @@ int main(){
                 }else if (page->button->bePressed.compare("1")==0){
                         pageId=1;
                 }else if (page->button->bePressed.compare("2")==0){
+                        pageId=1;
+                }else if (page->button->bePressed.compare("3")==0){
+                        pageId=1;
+                }else if (page->button->bePressed.compare("4")==0){
+                        pageId=1;
+                }else if (page->button->bePressed.compare("5")==0){
                         pageId=1;
                 }
 
 
         }else if(page->button->bePressed.compare("2")==0){
-                string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
+                string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍","添加书籍","下架书籍","逾期读者罚款","修改书籍信息"};
                 IObserver* tempfuncList[]={
-                    new SearchBook(),
+                    new SearchBycatalog(),
                     new BackBook(),
                     new NotifyReader(),
+                    new AddBook(),
+                    new DeleteBook(),
+                    new ReaderFine(),
+                    new EditBook(),
+
                 };
-                page->PageRefresh(tempbutton,3,tempfuncList);
+                page->PageRefresh(tempbutton,7,tempfuncList);
                 page->PageListen();
                 page->PageExcute();
 
@@ -741,7 +1147,16 @@ int main(){
                         pageId=2;
                 }else if (page->button->bePressed.compare("2")==0){
                         pageId=2;
+                }else if (page->button->bePressed.compare("3")==0){
+                        pageId=2;
+                }else if (page->button->bePressed.compare("4")==0){
+                        pageId=2;
+                }else if (page->button->bePressed.compare("5")==0){
+                        pageId=2;
+                }else if (page->button->bePressed.compare("6")==0){
+                        pageId=2;
                 }
+
 
 
         }
@@ -751,6 +1166,7 @@ int main(){
 
                         if (page->button->bePressed.compare("0")==0){
                             //下一次要刷新的准备
+                            
                                 string tempbutton[]={"读者注册","读者登陆","管理员登陆"};
                                 IObserver* tempfuncList[]={
                                     new GeneralUserCreate(),
@@ -771,26 +1187,49 @@ int main(){
                                 
 
                     }else if(page->button->bePressed.compare("1")==0){
-                            string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
+                            string tempbutton[]={"搜索图书","借阅图书","归还书籍","预定书籍","取消预定","续借书籍"};
+                            IObserver* tempfuncList[]={
+                                new SearchBycatalog(),
+                                new BorrowBook(),
+                                new BackBook(),
+                                new ReserveBook(),
+                                new ReserveCancel(),
+                                new RedeCorateBook(),
+                            };
+                            page->PageRefresh(tempbutton,6,tempfuncList);
+                            page->PageListen();
+                            page->PageExcute();
+
+                             /* 
+                             string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
                             IObserver* tempfuncList[]={
                                 new SearchBook(),
                                 new BorrowBook(),
                                 new BackBook(),
-                            };
+                            }; 
                             page->PageRefresh(tempbutton,3,tempfuncList);
                             page->PageListen();
-                            page->PageExcute();
+                            page->PageExcute(); */
                             if (page->button->bePressed.compare("0")==0){
                                     pageId=1;
                             }else if (page->button->bePressed.compare("1")==0){
                                     pageId=1;
                             }else if (page->button->bePressed.compare("2")==0){
                                     pageId=1;
+                            }else if (page->button->bePressed.compare("3")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("4")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("5")==0){
+                                    pageId=1;
+                            }else{
+                                 pageId=1;
+
                             }
 
 
                     }else if(page->button->bePressed.compare("2")==0){
-                            string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
+                           /*  string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
                             IObserver* tempfuncList[]={
                                 new SearchBook(),
                                 new BackBook(),
@@ -798,7 +1237,21 @@ int main(){
                             };
                             page->PageRefresh(tempbutton,3,tempfuncList);
                             page->PageListen();
-                            page->PageExcute();
+                            page->PageExcute(); */
+                            string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍","添加书籍","下架书籍","逾期读者罚款","修改书籍信息"};
+                            IObserver* tempfuncList[]={
+                                new SearchBycatalog(),
+                                new BackBook(),
+                                new NotifyReader(),
+                                new AddBook(),
+                                new DeleteBook(),
+                                new ReaderFine(),
+                                new EditBook(),
+
+                            };
+                                page->PageRefresh(tempbutton,7,tempfuncList);
+                                page->PageListen();
+                                page->PageExcute();
 
                             if (page->button->bePressed.compare("0")==0){
                                     pageId=2;
@@ -806,7 +1259,19 @@ int main(){
                                     pageId=2;
                             }else if (page->button->bePressed.compare("2")==0){
                                     pageId=2;
+                            }else if (page->button->bePressed.compare("3")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("4")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("5")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("6")==0){
+                                    pageId=2;
+                            }else{
+                                   pageId=2;
+
                             }
+
 
 
                     }
@@ -814,7 +1279,20 @@ int main(){
 
     
             }else if (pageId==1){
-                    string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
+                 string tempbutton[]={"搜索图书","借阅图书","归还书籍","预定书籍","取消预定","续借书籍"};
+                            IObserver* tempfuncList[]={
+                                new SearchBycatalog(),
+                                new BorrowBook(),
+                                new BackBook(),
+                                new ReserveBook(),
+                                new ReserveCancel(),
+                                new RedeCorateBook(),
+                            };
+                            page->PageRefresh(tempbutton,6,tempfuncList);
+                            page->PageListen();
+                            page->PageExcute();
+
+                   /*  string tempbutton[]={"搜索图书","借阅图书","归还书籍"};
                     IObserver* tempfuncList[]={
                         new SearchBook(),
                         new BorrowBook(),
@@ -822,19 +1300,28 @@ int main(){
                     };
                     page->PageRefresh(tempbutton,3,tempfuncList);
                     page->PageListen();
-                    page->PageExcute();
+                    page->PageExcute(); */
                     if (page->button->bePressed.compare("0")==0){
-                            pageId=1;
-                    }else if (page->button->bePressed.compare("1")==0){
-                            pageId=1;
-                    }else if (page->button->bePressed.compare("2")==0){
-                            pageId=1;
-                    }
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("1")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("2")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("3")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("4")==0){
+                                    pageId=1;
+                            }else if (page->button->bePressed.compare("5")==0){
+                                    pageId=1;
+                            }else{
+                                 pageId=1;
+
+                            }
 
 
             
             }else if (pageId==2){
-                string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
+                /* string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍"};
                     IObserver* tempfuncList[]={
                         new SearchBook(),
                         new BackBook(),
@@ -842,15 +1329,47 @@ int main(){
                     };
                     page->PageRefresh(tempbutton,3,tempfuncList);
                     page->PageListen();
-                    page->PageExcute();
+                    page->PageExcute(); */
+                    string tempbutton[]={"搜索图书","归还书籍","通知逾期读者归还书籍","添加书籍","下架书籍","逾期读者罚款","修改书籍信息"};
+                            IObserver* tempfuncList[]={
+                                new SearchBycatalog(),
+                                new BackBook(),
+                                new NotifyReader(),
+                                new AddBook(),
+                                new DeleteBook(),
+                                new ReaderFine(),
+                                new EditBook(),
 
-                    if (page->button->bePressed.compare("0")==0){
+                            };
+                                page->PageRefresh(tempbutton,7,tempfuncList);
+                                page->PageListen();
+                                page->PageExcute();
+
+                   /*  if (page->button->bePressed.compare("0")==0){
                             pageId=2;
                     }else if (page->button->bePressed.compare("1")==0){
                             pageId=2;
                     }else if (page->button->bePressed.compare("2")==0){
                             pageId=2;
-                    }
+                    } */
+                    if (page->button->bePressed.compare("0")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("1")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("2")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("3")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("4")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("5")==0){
+                                    pageId=2;
+                            }else if (page->button->bePressed.compare("6")==0){
+                                    pageId=2;
+                            }else{
+                                   pageId=2;
+
+                            }
 
 
             }

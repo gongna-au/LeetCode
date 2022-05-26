@@ -48,38 +48,14 @@ class test{
 
 };
 
-class Result{
-    int n;
-    list<Temp*> list;
-};
-
-Temp test( string s ,int pageId){
-
-    if (pageId==0){
-        
-
-
-    }else if (pageId==1){ 
-
-    }else if (pageId==2){
-
-
-
-    }
-
-    
 
 
 
 
 
-
-
-
-}
-
-
-int main(){
-   
-
+int main() 
+{ 
+    list<int> mylist{ 1, 2, 3, 4, 5 }; 
+    cout << mylist.back(); 
+    return 0; 
 }
